@@ -18,6 +18,9 @@ import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 //@TestPropertySource(locations = "/application-test.properties",
 //        properties = "server.port=8081")
@@ -37,6 +40,8 @@ public class UsersControllerIntegrationTest {
 
     private String authorizationToken;
 
+    private String userId;
+
     @Test
     @DisplayName("User can be created")
     @Order(1)
@@ -51,8 +56,8 @@ public class UsersControllerIntegrationTest {
 //                "}";
 
         JSONObject userDetailsRequestJson = new JSONObject();
-        userDetailsRequestJson.put("firstName", "Sergey");
-        userDetailsRequestJson.put("lastName", "Kargopolov");
+        userDetailsRequestJson.put("firstName", "Anastazja");
+        userDetailsRequestJson.put("lastName", "Glowska");
         userDetailsRequestJson.put("email", "test@test.com");
         userDetailsRequestJson.put("password","12345678");
         userDetailsRequestJson.put("repeatPassword", "12345678");
@@ -68,16 +73,17 @@ public class UsersControllerIntegrationTest {
                 request,
                 UserRest.class);
         UserRest createdUserDetails = createdUserDetailsEntity.getBody();
+        userId = createdUserDetails.getUserId();
 
         // Assert
-        Assertions.assertEquals(HttpStatus.OK, createdUserDetailsEntity.getStatusCode());
-        Assertions.assertEquals(userDetailsRequestJson.getString("firstName"),
+        assertEquals(HttpStatus.OK, createdUserDetailsEntity.getStatusCode());
+        assertEquals(userDetailsRequestJson.getString("firstName"),
                 createdUserDetails.getFirstName(),
                 "Returned user's first name seems to be incorrect");
-        Assertions.assertEquals(userDetailsRequestJson.getString("lastName"),
+        assertEquals(userDetailsRequestJson.getString("lastName"),
                 createdUserDetails.getLastName(),
                 "Returned user's last name seems to be incorrect");
-        Assertions.assertEquals(userDetailsRequestJson.getString("email"),
+        assertEquals(userDetailsRequestJson.getString("email"),
                 createdUserDetails.getEmail(),
                 "Returned user's email seems to be incorrect");
         Assertions.assertFalse(createdUserDetails.getUserId().trim().isEmpty(),
@@ -103,7 +109,7 @@ public class UsersControllerIntegrationTest {
                 });
 
         // Assert
-        Assertions.assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode(),
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode(),
                 "HTTP Status code 403 Forbidden should have been returned");
     }
 
@@ -131,7 +137,7 @@ public class UsersControllerIntegrationTest {
                 getValuesAsList(SecurityConstants.HEADER_STRING).get(0);
 
         // Assert
-        Assertions.assertEquals(HttpStatus.OK, response.getStatusCode(),
+        assertEquals(HttpStatus.OK, response.getStatusCode(),
                 "HTTP Status code should be 200");
         Assertions.assertNotNull(authorizationToken,
                 "Response should contain Authorization header with JWT");
@@ -159,9 +165,46 @@ public class UsersControllerIntegrationTest {
                 });
 
         // Assert
-        Assertions.assertEquals(HttpStatus.OK, response.getStatusCode(),
+        assertEquals(HttpStatus.OK, response.getStatusCode(),
                 "HTTP Status code should be 200");
         Assertions.assertTrue(response.getBody().size() == 1,
                 "There should be exactly 1 user in the list");
+    }
+
+    @Test
+    @Order(5)
+    @DisplayName("update user")
+    void testUpdateUser_whenValidUserIdProvided_returnsUpdatedUser() throws JSONException {
+
+        //arrange
+        JSONObject userDetailsRequestJson = new JSONObject();
+        userDetailsRequestJson.put("firstName", "Anastazjaaa");
+        userDetailsRequestJson.put("lastName", "Glowskaaa");
+        userDetailsRequestJson.put("email", "test2@test.com");
+        userDetailsRequestJson.put("password","123456789");
+        userDetailsRequestJson.put("repeatPassword", "123456789");
+
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        headers.setBearerAuth(authorizationToken);
+
+        //act
+        HttpEntity<String> request = new HttpEntity<>(userDetailsRequestJson.toString(), headers);
+
+        ResponseEntity<UserRest> response = testRestTemplate.exchange("/users/" + userId,
+                HttpMethod.PUT, request, UserRest.class);
+
+        //assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals("Anastazjaaa", response.getBody().getFirstName());
+        assertNotNull(authorizationToken, "Token can not be empty");
+
+        System.out.println(response.getBody().getFirstName());
+        System.out.println(response.getBody().getEmail());
+
+
+
     }
 }

@@ -8,6 +8,7 @@ import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.lang.reflect.Type;
@@ -43,5 +44,22 @@ public class UsersController {
         }.getType();
 
         return new ModelMapper().map(users, listType);
+    }
+
+    @PutMapping("/{id}")
+    public UserRest updateUser(@PathVariable String id, @RequestBody @Valid UserDetailsRequestModel userDetails) {
+        ModelMapper modelMapper = new ModelMapper();
+        UserDto userDto = modelMapper.map(userDetails, UserDto.class);
+        userDto.setUserId(id);
+
+        UserDto createdUser = usersService.updateUser(userDto);
+        return modelMapper.map(createdUser, UserRest.class);
+
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteUser(@PathVariable  String id) {
+        usersService.deleteUser(id);
+        return ResponseEntity.noContent().build();
     }
 }

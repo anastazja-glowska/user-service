@@ -11,11 +11,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
 import javax.crypto.SecretKey;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class AuthorizationFilter extends BasicAuthenticationFilter {
 
@@ -62,8 +65,20 @@ public class AuthorizationFilter extends BasicAuthenticationFilter {
             String user = (String) claims.get("sub");
 
             if (user != null) {
-                return new UsernamePasswordAuthenticationToken(user, null, null);
+                String role = (String) claims.get("role");
+
+                List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+                if (role != null) {
+                    authorities.add(new SimpleGrantedAuthority(role));
+                    System.out.println("HERE IS ROLE " + role);
+                    System.out.println("Authorities: " + authorities);
+
+                }
+
+
+                return new UsernamePasswordAuthenticationToken(user, null, authorities);
             }
+
         } catch(Exception ex) {
             ex.printStackTrace();
         }

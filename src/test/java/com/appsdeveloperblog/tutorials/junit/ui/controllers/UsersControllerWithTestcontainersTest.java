@@ -1,7 +1,9 @@
 package com.appsdeveloperblog.tutorials.junit.ui.controllers;
 
+import com.appsdeveloperblog.tutorials.junit.io.UserEntity;
 import com.appsdeveloperblog.tutorials.junit.security.SecurityConstants;
 import com.appsdeveloperblog.tutorials.junit.ui.response.UserRest;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.junit.jupiter.api.*;
@@ -20,7 +22,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
@@ -32,6 +34,8 @@ public class UsersControllerWithTestcontainersTest {
     private TestRestTemplate testRestTemplate;
 
     private String authorizationToken;
+
+    private String userId;
 
    // @Container
     @ServiceConnection
@@ -78,6 +82,7 @@ public class UsersControllerWithTestcontainersTest {
                 request,
                 UserRest.class);
         UserRest createdUserDetails = createdUserDetailsEntity.getBody();
+        userId = createdUserDetails.getUserId();
 
         // Assert
         Assertions.assertEquals(HttpStatus.OK, createdUserDetailsEntity.getStatusCode());
@@ -174,6 +179,68 @@ public class UsersControllerWithTestcontainersTest {
                 "HTTP Status code should be 200");
         Assertions.assertTrue(response.getBody().size() == 1,
                 "There should be exactly 1 user in the list");
+    }
+
+    @Test
+    @Order(6)
+    @DisplayName("update user")
+    void testUpdateUser_whenValidUserIdProvided_returnsUpdatedUser() throws JSONException {
+
+        //arrange
+        JSONObject userDetailsRequestJson = new JSONObject();
+        userDetailsRequestJson.put("firstName", "Anastazjaaa");
+        userDetailsRequestJson.put("lastName", "Glowskaaa");
+        userDetailsRequestJson.put("email", "test@test.com");
+        userDetailsRequestJson.put("password","12345678");
+        userDetailsRequestJson.put("repeatPassword", "12345678");
+
+
+
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        headers.setBearerAuth(authorizationToken);
+
+        //act
+        HttpEntity<String> request = new HttpEntity<>(userDetailsRequestJson.toString(), headers);
+
+        ResponseEntity<UserRest> response = testRestTemplate.exchange("/users/" + userId,
+                HttpMethod.PUT, request, UserRest.class);
+
+        //assert
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals("Anastazjaaa", response.getBody().getFirstName());
+        assertNotNull(authorizationToken, "Token can not be empty");
+
+        System.out.println(response.getBody().getFirstName());
+        System.out.println(response.getBody().getEmail());
+
+
+
+    }
+
+    @Test
+    @Order(7)
+    void testDeleteUser_whenValidUserIdProvided_deleteUser() throws JSONException {
+        // arrange
+
+
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(authorizationToken);
+
+
+
+        HttpEntity<Object> request = new HttpEntity<>(headers);
+
+        // act
+
+        ResponseEntity<Void> responseEntity = testRestTemplate.exchange("/users/" + userId,
+                HttpMethod.DELETE, request, Void.class);
+
+        //assert
+        assertEquals(HttpStatus.NO_CONTENT, responseEntity.getStatusCode());
     }
 
 }

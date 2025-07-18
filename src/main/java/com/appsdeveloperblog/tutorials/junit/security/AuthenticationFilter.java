@@ -68,6 +68,7 @@ public class AuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 
         String token = Jwts.builder()
                 .subject(userName)
+                .claim("role", "ROLE_USER")
                 .expiration(new Date(System.currentTimeMillis() + (long) 864000000))
                 .issuedAt(Date.from(now))
                 .signWith(secretKey)

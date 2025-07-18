@@ -85,6 +85,45 @@ public class UsersServiceImpl implements UsersService {
     }
 
     @Override
+    public UserDto updateUser(UserDto user) {
+        if(user.getUserId() == null) {
+            throw new UsersServiceException("User ID must not be null");
+        }
+
+        UserEntity existingUser = usersRepository.findByUserId(user.getUserId());
+
+        if(existingUser == null) {
+            throw new UsersServiceException("User not found");
+        }
+
+        existingUser.setFirstName(user.getFirstName());
+        existingUser.setLastName(user.getLastName());
+        existingUser.setEmail(user.getEmail());
+
+        if(user.getPassword() != null && !user.getPassword().isBlank() && user.getEncryptedPassword() != null) {
+            String encodedPassword = bCryptPasswordEncoder.encode(user.getPassword());
+            existingUser.setEncryptedPassword(encodedPassword);
+        }
+
+
+        return new ModelMapper().map(existingUser, UserDto.class);
+
+
+    }
+
+    @Override
+    public void deleteUser(String id) {
+        if(usersRepository.findByUserId(id) == null) {
+            throw new UsersServiceException("There is any user with this id");
+        }
+
+        UserEntity userEntity = usersRepository.findByUserId(id);
+        usersRepository.delete(userEntity);
+
+
+    }
+
+    @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         UserEntity userEntity = usersRepository.findByEmailEndsWith(email);
 

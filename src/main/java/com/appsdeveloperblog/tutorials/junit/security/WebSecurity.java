@@ -35,6 +35,7 @@ public class WebSecurity {
 
         http.authorizeHttpRequests((authz) -> authz
                         .requestMatchers(new AntPathRequestMatcher("/users", HttpMethod.POST.name())).permitAll()
+                        .requestMatchers(HttpMethod.PUT, "/users/**").hasAuthority("ROLE_USER")
                         .anyRequest().authenticated()
                 )
                 .addFilter(getAuthenticationFilter(authenticationManager))
